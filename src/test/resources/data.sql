@@ -1,0 +1,33 @@
+DELETE FROM borrow;
+DELETE FROM book_instance;
+DELETE FROM book_definition;
+DELETE FROM app_user;
+
+-- Book Definitions
+INSERT INTO book_definition (id, title, author) VALUES ('11111111-1111-1111-1111-111111111111', 'Harry Potter à l''école des sorciers', 'J.K. Rowling');
+INSERT INTO book_definition (id, title, author) VALUES ('11111111-1111-1111-1111-111111111112', 'Harry Potter et la Chambre des secrets', 'J.K. Rowling');
+INSERT INTO book_definition (id, title, author) VALUES ('11111111-1111-1111-1111-111111111113', 'Harry Potter et le Prisonnier d''Azkaban', 'J.K. Rowling');
+INSERT INTO book_definition (id, title, author) VALUES ('11111111-1111-1111-1111-111111111114', 'Voyage au centre de la Terre', 'Jules Verne');
+INSERT INTO book_definition (id, title, author) VALUES ('11111111-1111-1111-1111-111111111115', 'Voyage au centre de la Terre', 'Jean Plume');
+
+-- Book Instances
+INSERT INTO book_instance (id, book_state, book_definition_id, version) VALUES ('22222222-0000-0000-0000-000000000001', 'OK', '11111111-1111-1111-1111-111111111114', 0);
+INSERT INTO book_instance (id, book_state, book_definition_id, version) VALUES ('22222222-0000-0000-0000-000000000002', 'NEW', '11111111-1111-1111-1111-111111111114', 0);
+INSERT INTO book_instance (id, book_state, book_definition_id, version) VALUES ('22222222-0000-0000-0000-000000000003', 'NEW', '11111111-1111-1111-1111-111111111114', 0);
+INSERT INTO book_instance (id, book_state, book_definition_id, version) VALUES ('22222222-0000-0000-0000-000000000004', 'BROKEN', '11111111-1111-1111-1111-111111111115', 0);
+INSERT INTO book_instance (id, book_state, book_definition_id, version) VALUES ('22222222-0000-0000-0000-000000000005', 'BROKEN', '11111111-1111-1111-1111-111111111111', 0);
+INSERT INTO book_instance (id, book_state, book_definition_id, version) VALUES ('22222222-0000-0000-0000-000000000006', 'BROKEN', '11111111-1111-1111-1111-111111111112', 0);
+INSERT INTO book_instance (id, book_state, book_definition_id, version) VALUES ('22222222-0000-0000-0000-000000000007', 'BROKEN', '11111111-1111-1111-1111-111111111112', 0);
+INSERT INTO book_instance (id, book_state, book_definition_id, version) VALUES ('22222222-0000-0000-0000-000000000008', 'OK', '11111111-1111-1111-1111-111111111111', 0);
+INSERT INTO book_instance (id, book_state, book_definition_id, version) VALUES ('22222222-0000-0000-0000-000000000009', 'OK', '11111111-1111-1111-1111-111111111113', 0);
+
+-- Users
+INSERT INTO app_user (id, username, password, user_role) VALUES ('33333333-1111-1111-1111-111111111101', 'user1', '$2a$10$xRPbhGAWsa8Zv84DWPBMS.XtVfV1o403kh8/kcyXNp7tUqwFzHsWe', 'ADMIN');
+INSERT INTO app_user (id, username, password, user_role) VALUES ('33333333-1111-1111-1111-111111111102', 'user2', '$2a$10$WY.0YfHAn5c0pixYjNPAuO5okEDUSfbnzgXM6HZhwJgGeSmEAfS0u', 'USER');
+INSERT INTO app_user (id, username, password, user_role) VALUES ('33333333-1111-1111-1111-111111111103', 'user3', '$2a$10$gsrNdwHC5hOQJnlJ1lOYUeBFEOwgOeL1X75K2Yih4phxjECh0kgya', 'USER');
+
+-- Borrows
+INSERT INTO borrow (id, book_instance_id, username, status, borrow_date, return_date) VALUES ('44444444-1111-1111-1111-111111111001', '22222222-0000-0000-0000-000000000001', '33333333-1111-1111-1111-111111111101', 'ONGOING', TIMESTAMP '2025-05-14 15:30:00', null);
+INSERT INTO borrow (id, book_instance_id, username, status, borrow_date, return_date) VALUES ('44444444-1111-1111-1111-111111111002', '22222222-0000-0000-0000-000000000002', '33333333-1111-1111-1111-111111111102', 'ONGOING', TIMESTAMP '2025-06-01 15:30:00', null);
+INSERT INTO borrow (id, book_instance_id, username, status, borrow_date, return_date) VALUES ('44444444-1111-1111-1111-111111111003', '22222222-0000-0000-0000-000000000008', '33333333-1111-1111-1111-111111111101', 'ONGOING', TIMESTAMP '2025-06-14 15:30:00', null);
+INSERT INTO borrow (id, book_instance_id, username, status, borrow_date, return_date) VALUES ('44444444-1111-1111-1111-111111111004', '22222222-0000-0000-0000-000000000009', '33333333-1111-1111-1111-111111111101', 'RETURNED', TIMESTAMP '2025-04-14 15:30:00', TIMESTAMP '2025-04-30 15:30:00');
