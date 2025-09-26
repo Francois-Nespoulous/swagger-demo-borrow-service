@@ -9,11 +9,11 @@ import java.util.Optional;
 import java.util.UUID;
 
 public interface BorrowRepository extends JpaRepository<BorrowEntity, Long> {
-    List<BorrowEntity> getAllByUser_Id(UUID id);
+    List<BorrowEntity> getAllByUserId(UUID id);
 
     boolean existsByBookInstanceId_AndStatusEquals(UUID bookInstanceId, BorrowStatus borrowStatus);
 
     Optional<BorrowEntity> findById(UUID borrowId);
 
-    int countBorrowedByUser_Id_AndStatusEquals(UUID userId, BorrowStatus borrowStatus);
+    int countBorrowedByUserId_AndStatusEquals(UUID userId, BorrowStatus borrowStatus);
 }

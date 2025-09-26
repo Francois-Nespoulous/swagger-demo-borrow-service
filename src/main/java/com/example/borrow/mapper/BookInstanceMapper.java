@@ -66,4 +66,17 @@ public class BookInstanceMapper {
                 bookInstance.getVersion()
         );
     }
+
+    public static BookInstance toDomain(BookInstanceDto bookInstanceDto) {
+        BookDefinition bookDefinition = BookDefinitionMapper.toDomainWithoutInstance(bookInstanceDto.bookDefinition());
+
+        return new BookInstance(
+                bookInstanceDto.id(),
+                bookInstanceDto.bookState(),
+                bookDefinition,
+                bookInstanceDto.borrowed(),
+                null,
+                null
+        );
+    }
 }

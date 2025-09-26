@@ -84,4 +84,15 @@ public class BookDefinitionMapper {
         bookDefinitionEntity.setId(bookDefinition.getId());
         return bookDefinitionEntity;
     }
+
+    public static BookDefinition toDomainWithoutInstance(BookDefinitionDto bookDefinitionDto) {
+        return new BookDefinition(
+                bookDefinitionDto.id(),
+                bookDefinitionDto.title(),
+                bookDefinitionDto.author(),
+                null,
+                bookDefinitionDto.nbTotalBooks(),
+                bookDefinitionDto.nbBorrowedBooks()
+        );
+    }
 }

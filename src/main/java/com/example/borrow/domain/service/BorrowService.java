@@ -1,5 +1,6 @@
 package com.example.borrow.domain.service;
 
+import com.example.borrow.client.BookClient;
 import com.example.borrow.client.UserClient;
 import com.example.borrow.domain.enums.BorrowStatus;
 import com.example.borrow.domain.model.BookInstance;
@@ -9,9 +10,7 @@ import com.example.borrow.exception.specific.*;
 import com.example.borrow.mapper.BookInstanceMapper;
 import com.example.borrow.mapper.BorrowMapper;
 import com.example.borrow.mapper.UserMapper;
-import com.example.borrow.repository.BookInstanceRepository;
 import com.example.borrow.repository.BorrowRepository;
-import com.example.borrow.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
@@ -26,18 +25,16 @@ import java.util.UUID;
 public class BorrowService {
     private static final int maxBorrowedBooksPerUser = 3;
 
-    private final BookInstanceRepository bookInstanceRepository ;
-    private final UserRepository userRepository;
     private final BorrowRepository borrowRepository;
     private final UserClient userClient;
+    private final BookClient bookClient;
 
     @Autowired
-    public BorrowService(BookInstanceRepository bookInstanceRepository, UserRepository userRepository, BorrowRepository borrowRepository,
-                         UserClient userClient) {
-        this.bookInstanceRepository = bookInstanceRepository;
-        this.userRepository = userRepository;
+    public BorrowService(BorrowRepository borrowRepository,
+                         UserClient userClient, BookClient bookClient) {
         this.borrowRepository = borrowRepository;
         this.userClient = userClient;
+        this.bookClient = bookClient;
     }
 
     @Transactional
@@ -61,14 +58,14 @@ public class BorrowService {
         this.assertUserCanBorrow(user);
 
         try {
-            bookInstance.updateLastAttempt();
-            bookInstanceRepository.save(BookInstanceMapper.toEntity(bookInstance));
+//            bookInstance.updateLastAttempt();
+//            bookInstanceRepository.save(BookInstanceMapper.toEntity(bookInstance)); TODO pour optimist lock
 
             Borrow borrow = new Borrow(null, bookInstance, user, BorrowStatus.ONGOING, LocalDateTime.now(), null);
 
-            return BorrowMapper.toDomain(
+            return BorrowMapper.toDomain( //TODO borrowRepository pas encore actu, donc client => old value
                     borrowRepository.save(BorrowMapper.toEntity(borrow)),
-                    borrowRepository);
+                    bookClient, userClient);
         } catch (OptimisticLockingFailureException e) {
             throw new ConcurrentBorrowException(bookInstanceId);
         }
@@ -97,11 +94,11 @@ public class BorrowService {
 
         try {
             borrow.returnBookNow();
-            bookInstanceRepository.save(BookInstanceMapper.toEntity(borrow.getBookInstance()));
+//            bookInstanceRepository.save(BookInstanceMapper.toEntity(borrow.getBookInstance())); TODO pour optimist lock
 
-            return BorrowMapper.toDomain(
+            return BorrowMapper.toDomain( //TODO borrowRepository pas encore actu, donc client => old value
                     borrowRepository.save(BorrowMapper.toEntity(borrow)),
-                    borrowRepository);
+                    bookClient, userClient);
         } catch (OptimisticLockingFailureException e) {
             throw new ConcurrentReturnException(borrow.getBookInstance().getId());
         }
@@ -110,9 +107,9 @@ public class BorrowService {
     public List<Borrow> getBorrowHistory() {
         User user = this.loggedUser();
 
-        return borrowRepository.getAllByUser_Id(user.getId())
+        return borrowRepository.getAllByUserId(user.getId())
                 .stream()
-                .map(entity -> BorrowMapper.toDomain(entity, borrowRepository))
+                .map(entity -> BorrowMapper.toDomain(entity, bookClient, userClient))
                 .toList();
     }
 
@@ -123,23 +120,19 @@ public class BorrowService {
 
     private User userFromId(UUID userId) {
         return UserMapper.toDomain(
-                userRepository.findById(userId)
-                        .orElseThrow(() -> new UserNotFoundException(userId)),
-                borrowRepository);
+                userClient.getUser(userId));
     }
 
     private BookInstance bookInstanceFromId(UUID bookInstanceId) {
         return BookInstanceMapper.toDomain(
-                bookInstanceRepository.findById(bookInstanceId)
-                        .orElseThrow(() -> new BookInstanceNotFoundException(bookInstanceId)),
-                borrowRepository);
+                bookClient.getBookInstance(bookInstanceId));
     }
 
     private Borrow borrowFromId(UUID borrowId) {
         return BorrowMapper.toDomain(
                 borrowRepository.findById(borrowId)
                         .orElseThrow(() -> new BorrowNotFoundException(borrowId)),
-                borrowRepository);
+                bookClient, userClient);
     }
 
 
@@ -154,7 +147,7 @@ public class BorrowService {
     }
 
     private void assertUserCanBorrow(User user) {
-        if (borrowRepository.countBorrowedByUser_Id_AndStatusEquals(user.getId(), BorrowStatus.ONGOING) >= maxBorrowedBooksPerUser) // TODO var env ?
+        if (borrowRepository.countBorrowedByUserId_AndStatusEquals(user.getId(), BorrowStatus.ONGOING) >= maxBorrowedBooksPerUser) // TODO var env ?
             throw new TooMuchBooksBorrowedForUserException(user.getUsername());
     }
 
@@ -163,11 +156,27 @@ public class BorrowService {
             throw new UserNotAllowedToReturnBookException(user.getUsername());
     }
 
-    private void assertBorrowEntitiesExist(Borrow borrow) {
-        if (!userRepository.existsById(borrow.getUser().getId()))
+    private void assertBorrowEntitiesExist(Borrow borrow) { //TODO optional plutot ? ou on laisse les services gérer les erreurs ?
+        if (userClient.getUser(borrow.getUser().getId()) == null)
             throw new UserNotFoundException(borrow.getUser().getId());
 
-        if (!bookInstanceRepository.existsById(borrow.getBookInstance().getId()))
+        if (bookClient.getBookInstance(borrow.getBookInstance().getId()) == null)
             throw new BookInstanceNotFoundException(borrow.getBookInstance().getId());
+    }
+
+
+    public int getNumberOfBooksBorrowedByUser(UUID userId) {
+        return borrowRepository.countBorrowedByUserId_AndStatusEquals(userId, BorrowStatus.ONGOING);
+    }
+
+    public int getNumberOfBooksBorrowedAmongBookInstances(List<UUID> bookInstanceIds) {
+        return (int) bookInstanceIds
+                .stream()
+                .filter(this::isBookBorrowed)
+                .count();
+    }
+
+    public boolean isBookBorrowed(UUID bookInstanceId) {
+        return borrowRepository.existsByBookInstanceId_AndStatusEquals(bookInstanceId, BorrowStatus.ONGOING);
     }
 }

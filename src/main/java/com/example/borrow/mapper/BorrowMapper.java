@@ -1,16 +1,22 @@
 package com.example.borrow.mapper;
 
+import com.example.borrow.client.BookClient;
+import com.example.borrow.client.UserClient;
 import com.example.borrow.domain.model.Borrow;
+import com.example.borrow.dto.out.BookInstanceDto;
 import com.example.borrow.dto.out.BorrowDto;
+import com.example.borrow.dto.out.UserDto;
 import com.example.borrow.persistence.repository.entity.BorrowEntity;
-import com.example.borrow.repository.BorrowRepository;
 
 public class BorrowMapper {
-    public static Borrow toDomain(BorrowEntity borrowEntity, BorrowRepository borrowRepository) {
+    public static Borrow toDomain(BorrowEntity borrowEntity, BookClient bookClient, UserClient userClient) {
+        BookInstanceDto bookInstanceDto = bookClient.getBookInstance(borrowEntity.getBookInstanceId());
+        UserDto userDto = userClient.getUser(borrowEntity.getUserId());
+
         return new Borrow(
                 borrowEntity.getId(),
-                BookInstanceMapper.toDomain(borrowEntity.getBookInstance(), borrowRepository),
-                UserMapper.toDomain(borrowEntity.getUser(), borrowRepository),
+                BookInstanceMapper.toDomain(bookInstanceDto),
+                UserMapper.toDomain(userDto),
                 borrowEntity.getStatus(),
                 borrowEntity.getBorrowDate(),
                 borrowEntity.getReturnDate()
@@ -31,8 +37,8 @@ public class BorrowMapper {
     public static BorrowEntity toEntity(Borrow borrow) {
         return new BorrowEntity(
                 borrow.getId(),
-                BookInstanceMapper.toEntity(borrow.getBookInstance()),
-                UserMapper.toEntity(borrow.getUser(), null),
+                borrow.getBookInstance().getId(),
+                borrow.getUser().getId(),
                 borrow.getStatus(),
                 borrow.getBorrowDate(),
                 borrow.getReturnDate()

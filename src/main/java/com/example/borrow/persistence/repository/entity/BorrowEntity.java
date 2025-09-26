@@ -17,13 +17,10 @@ public class BorrowEntity {
     @Column(name = "id", updatable = false, nullable = false, length = 36)
     private UUID id;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "book_instance_id")
-    private BookInstanceEntity bookInstance;
+    private UUID bookInstanceId;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "username")
-    private UserEntity user;
+    @JoinColumn(name = "username") //TODO remane en userId, mais utilisent la meme db
+    private UUID userId;
 
     @Enumerated(EnumType.STRING)
     private BorrowStatus status;
@@ -35,10 +32,10 @@ public class BorrowEntity {
     public BorrowEntity() {
     }
 
-    public BorrowEntity(UUID id, BookInstanceEntity bookInstanceEntity, UserEntity userEntity, BorrowStatus status, LocalDateTime borrowDate, LocalDateTime returnDate) {
+    public BorrowEntity(UUID id, UUID bookInstanceEntity, UUID userEntity, BorrowStatus status, LocalDateTime borrowDate, LocalDateTime returnDate) {
         this.id = id;
-        this.bookInstance = bookInstanceEntity;
-        this.user = userEntity;
+        this.bookInstanceId = bookInstanceEntity;
+        this.userId = userEntity;
         this.status = status;
         this.borrowDate = borrowDate;
         this.returnDate = returnDate;
@@ -48,12 +45,12 @@ public class BorrowEntity {
         return id;
     }
 
-    public BookInstanceEntity getBookInstance() {
-        return bookInstance;
+    public UUID getBookInstanceId() {
+        return bookInstanceId;
     }
 
-    public UserEntity getUser() {
-        return user;
+    public UUID getUserId() {
+        return userId;
     }
 
     public BorrowStatus getStatus() {

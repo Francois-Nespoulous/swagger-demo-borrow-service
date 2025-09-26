@@ -10,6 +10,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import reactor.util.retry.Retry;
 
 import java.time.Duration;
+import java.util.UUID;
 
 @Service
 public class UserClient {
@@ -49,5 +50,39 @@ public class UserClient {
     private boolean isRetryableException(Throwable throwable) {
         return throwable instanceof WebClientResponseException &&
                 ((WebClientResponseException) throwable).getStatusCode().is5xxServerError();
+    }
+
+    public UserDto getUser(UUID userId) {
+        return webClient
+                .get()
+                .uri(this.USER_SERVICE_URL + "api/v1/user/" + userId)
+                .retrieve()
+                .onStatus(
+                        HttpStatusCode::isError,
+                        response -> exceptionMapper.mapError(response, serviceName)
+                         )
+                .bodyToMono(UserDto.class)
+                .retryWhen(
+                        Retry.backoff(3, Duration.ofMillis(500))
+                             .filter(this::isRetryableException)
+                          )
+                .block();
+    }
+
+    public UserDto getUserByUsername(String username) {
+        return webClient
+                .get()
+                .uri(this.USER_SERVICE_URL + "api/v1/user/username/" + username)
+                .retrieve()
+                .onStatus(
+                        HttpStatusCode::isError,
+                        response -> exceptionMapper.mapError(response, serviceName)
+                         )
+                .bodyToMono(UserDto.class)
+                .retryWhen(
+                        Retry.backoff(3, Duration.ofMillis(500))
+                             .filter(this::isRetryableException)
+                          )
+                .block();
     }
 }

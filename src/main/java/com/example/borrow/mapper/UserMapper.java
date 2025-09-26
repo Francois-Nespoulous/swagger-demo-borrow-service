@@ -10,7 +10,7 @@ import com.example.borrow.repository.BorrowRepository;
 
 public class UserMapper {
     public static User toDomain(UserEntity userEntity, BorrowRepository borrowRepository) {
-        int nbOfBooksBorrowed = borrowRepository.countBorrowedByUser_Id_AndStatusEquals(userEntity.getId(), BorrowStatus.ONGOING);
+        int nbOfBooksBorrowed = borrowRepository.countBorrowedByUserId_AndStatusEquals(userEntity.getId(), BorrowStatus.ONGOING);
         return new User(
                 userEntity.getId(),
                 userEntity.getUsername(),
