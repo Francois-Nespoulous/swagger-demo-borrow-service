@@ -3,14 +3,21 @@ package com.example.borrow.domain.service;
 import com.example.borrow.client.BookClient;
 import com.example.borrow.client.UserClient;
 import com.example.borrow.domain.enums.BorrowStatus;
+import com.example.borrow.domain.model.BookDefinition;
 import com.example.borrow.domain.model.BookInstance;
 import com.example.borrow.domain.model.Borrow;
 import com.example.borrow.domain.model.User;
+import com.example.borrow.dto.in.BookDefinitionClientDto;
+import com.example.borrow.dto.in.BookInstanceClientDto;
+import com.example.borrow.dto.in.UserClientDto;
 import com.example.borrow.exception.specific.*;
+import com.example.borrow.mapper.BookDefinitionMapper;
 import com.example.borrow.mapper.BookInstanceMapper;
 import com.example.borrow.mapper.BorrowMapper;
 import com.example.borrow.mapper.UserMapper;
+import com.example.borrow.persistence.repository.entity.BorrowEntity;
 import com.example.borrow.repository.BorrowRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.stereotype.Service;
@@ -22,8 +29,9 @@ import java.util.Objects;
 import java.util.UUID;
 
 @Service
+@Slf4j //TODO pas lombok ! Logger log = ...
 public class BorrowService {
-    private static final int maxBorrowedBooksPerUser = 3;
+    private static final int MAX_BORROWED_BOOKS_PER_USER = 3;
 
     private final BorrowRepository borrowRepository;
     private final UserClient userClient;
@@ -63,9 +71,13 @@ public class BorrowService {
 
             Borrow borrow = new Borrow(null, bookInstance, user, BorrowStatus.ONGOING, LocalDateTime.now(), null);
 
-            return BorrowMapper.toDomain( //TODO borrowRepository pas encore actu, donc client => old value
+            borrow = BorrowMapper.toDomain(
                     borrowRepository.save(BorrowMapper.toEntity(borrow)),
-                    bookClient, userClient);
+                    this.refreshBookInstance(bookInstance),
+                    this.refreshUser(user));
+            log.info("Book borrowed");
+            log.debug("Borrow created: {}", borrow);
+            return borrow;
         } catch (OptimisticLockingFailureException e) {
             throw new ConcurrentBorrowException(bookInstanceId);
         }
@@ -88,7 +100,6 @@ public class BorrowService {
     private Borrow returnBookByUser(UUID borrowId, User user) {
         Borrow borrow = this.borrowFromId(borrowId);
 
-        this.assertBorrowEntitiesExist(borrow);
         this.assertBookInstanceNotAlreadyReturned(borrow);
         this.assertUserCanReturnBorrow(borrow, user);
 
@@ -96,9 +107,13 @@ public class BorrowService {
             borrow.returnBookNow();
 //            bookInstanceRepository.save(BookInstanceMapper.toEntity(borrow.getBookInstance())); TODO pour optimist lock
 
-            return BorrowMapper.toDomain( //TODO borrowRepository pas encore actu, donc client => old value
+            borrow = BorrowMapper.toDomain(
                     borrowRepository.save(BorrowMapper.toEntity(borrow)),
-                    bookClient, userClient);
+                    this.refreshBookInstance(borrow.getBookInstance()),
+                    this.refreshUser(borrow.getUser()));
+            log.info("Book returned");
+            log.debug("Borrow updated: {}", borrow);
+            return borrow;
         } catch (OptimisticLockingFailureException e) {
             throw new ConcurrentReturnException(borrow.getBookInstance().getId());
         }
@@ -109,30 +124,35 @@ public class BorrowService {
 
         return borrowRepository.getAllByUserId(user.getId())
                 .stream()
-                .map(entity -> BorrowMapper.toDomain(entity, bookClient, userClient))
+                .map(entity -> BorrowMapper.toDomain(
+                        entity,
+                        this.enrichBookInstance(bookClient.getBookInstance(entity.getBookInstanceId())),
+                        user))
                 .toList();
     }
 
-
     private User loggedUser() {
-        return UserMapper.toDomain(userClient.getLoggedUser());
+        return this.enrichUser(userClient.getLoggedUser());
     }
 
     private User userFromId(UUID userId) {
-        return UserMapper.toDomain(
-                userClient.getUser(userId));
+        return this.enrichUser(userClient.getUser(userId));
     }
 
     private BookInstance bookInstanceFromId(UUID bookInstanceId) {
-        return BookInstanceMapper.toDomain(
-                bookClient.getBookInstance(bookInstanceId));
+        return this.enrichBookInstance(bookClient.getBookInstance(bookInstanceId));
     }
 
     private Borrow borrowFromId(UUID borrowId) {
+        BorrowEntity borrowEntity = borrowRepository.findById(borrowId)
+                .orElseThrow(() -> new BorrowNotFoundException(borrowId));
+
+        BookInstance bookInstance = this.enrichBookInstance(bookClient.getBookInstance(borrowEntity.getBookInstanceId()));
+        User user = this.enrichUser(userClient.getUser(borrowEntity.getUserId()));
         return BorrowMapper.toDomain(
-                borrowRepository.findById(borrowId)
-                        .orElseThrow(() -> new BorrowNotFoundException(borrowId)),
-                bookClient, userClient);
+                borrowEntity,
+                bookInstance,
+                user);
     }
 
 
@@ -147,7 +167,7 @@ public class BorrowService {
     }
 
     private void assertUserCanBorrow(User user) {
-        if (borrowRepository.countBorrowedByUserId_AndStatusEquals(user.getId(), BorrowStatus.ONGOING) >= maxBorrowedBooksPerUser) // TODO var env ?
+        if (borrowRepository.countBorrowedByUserId_AndStatusEquals(user.getId(), BorrowStatus.ONGOING) >= MAX_BORROWED_BOOKS_PER_USER) // TODO var env ?
             throw new TooMuchBooksBorrowedForUserException(user.getUsername());
     }
 
@@ -156,24 +176,60 @@ public class BorrowService {
             throw new UserNotAllowedToReturnBookException(user.getUsername());
     }
 
-    private void assertBorrowEntitiesExist(Borrow borrow) { //TODO optional plutot ? ou on laisse les services gérer les erreurs ?
-        if (userClient.getUser(borrow.getUser().getId()) == null)
-            throw new UserNotFoundException(borrow.getUser().getId());
 
-        if (bookClient.getBookInstance(borrow.getBookInstance().getId()) == null)
-            throw new BookInstanceNotFoundException(borrow.getBookInstance().getId());
+    private User enrichUser(UserClientDto userClientDto) {
+        return UserMapper.toDomain(userClientDto, getNumberOfBooksBorrowedByUser(userClientDto.id()));
+    }
+
+    private User refreshUser(User user) {
+        user.setNbOfBooksBorrowed(getNumberOfBooksBorrowedByUser(user.getId()));
+        return user;
+    }
+
+    private BookInstance enrichBookInstance(BookInstanceClientDto bookInstanceClientDto) {
+        BookDefinition bookDefinition = enrichBookDefinition(bookInstanceClientDto.bookDefinition());
+        return BookInstanceMapper.toDomain(bookInstanceClientDto, bookDefinition, isBookBorrowed(bookInstanceClientDto.id()));
+    }
+
+    private BookInstance refreshBookInstance(BookInstance bookInstance) {
+        BookDefinition bookDefinition = refreshBookDefinition(bookInstance.getBookDefinition());
+        bookInstance.setBookDefinition(bookDefinition);
+        bookInstance.setBorrowed(isBookBorrowed(bookInstance.getId()));
+        return bookInstance;
+    }
+
+    //TODO maybe service a part ? qui juste enrichi
+    private BookDefinition enrichBookDefinition(BookDefinitionClientDto bookDefinitionClientDto) {
+        List<BookInstance> instances = bookDefinitionClientDto.bookInstances().stream()
+                .map(bookInstanceClientDto -> {
+                    boolean borrowed = isBookBorrowed(bookInstanceClientDto.id());
+                    return BookInstanceMapper.toDomain(bookInstanceClientDto, null, borrowed);
+                })
+                .toList();
+
+        int nbTotal = instances.size();
+        int nbBorrowed = (int) instances.stream().filter(BookInstance::isBorrowed).count();
+
+        BookDefinition bookDefinition = BookDefinitionMapper.toDomain(bookDefinitionClientDto, instances, nbTotal, nbBorrowed);
+
+        instances.forEach(bookInstance -> bookInstance.setBookDefinition(bookDefinition));
+
+        return bookDefinition;
+    }
+
+    private BookDefinition refreshBookDefinition(BookDefinition bookDefinition) {
+        List<BookInstance> instances = bookDefinition.getBookInstances();
+        instances.forEach(bookInstance -> bookInstance.setBorrowed(isBookBorrowed(bookInstance.getId())));
+
+        bookDefinition.setNbTotalBooks(instances.size());
+        bookDefinition.setNbBorrowedBooks((int) instances.stream().filter(BookInstance::isBorrowed).count());
+
+        return bookDefinition;
     }
 
 
     public int getNumberOfBooksBorrowedByUser(UUID userId) {
         return borrowRepository.countBorrowedByUserId_AndStatusEquals(userId, BorrowStatus.ONGOING);
-    }
-
-    public int getNumberOfBooksBorrowedAmongBookInstances(List<UUID> bookInstanceIds) {
-        return (int) bookInstanceIds
-                .stream()
-                .filter(this::isBookBorrowed)
-                .count();
     }
 
     public boolean isBookBorrowed(UUID bookInstanceId) {

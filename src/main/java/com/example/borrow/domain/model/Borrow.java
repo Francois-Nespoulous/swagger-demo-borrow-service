@@ -57,6 +57,5 @@ public class Borrow {
     public void returnBookNow() {
         this.status = BorrowStatus.RETURNED;
         this.returnDate = LocalDateTime.now();
-        this.bookInstance.updateLastAttempt();
     }
 }

@@ -1,6 +1,6 @@
 package com.example.borrow.client;
 
-import com.example.borrow.dto.out.BookInstanceDto;
+import com.example.borrow.dto.in.BookInstanceClientDto;
 import com.example.borrow.exception.WebClientExceptionMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatusCode;
@@ -30,7 +30,7 @@ public class BookClient {
         this.BOOK_SERVICE_URL = bookServiceUrl;
     }
 
-    public BookInstanceDto getBookInstance(UUID bookInstanceId) {
+    public BookInstanceClientDto getBookInstance(UUID bookInstanceId) {
         return webClient
                 .get()
                 .uri(this.BOOK_SERVICE_URL + "api/v1/book/instance/" + bookInstanceId)
@@ -39,30 +39,13 @@ public class BookClient {
                         HttpStatusCode::isError,
                         response -> exceptionMapper.mapError(response, serviceName)
                 )
-                .bodyToMono(BookInstanceDto.class)
+                .bodyToMono(BookInstanceClientDto.class)
                 .retryWhen(
                         Retry.backoff(3, Duration.ofMillis(500))
                                 .filter(this::isRetryableException)
                 )
                 .block();
     }
-
-//    public BookInstanceDto updateBookInstance(UUID bookInstanceId) { TODO pour optimist lock
-//        return webClient
-//                .post()
-//                .uri(this.BOOK_SERVICE_URL + "api/v1/book/instance/" + bookInstanceId + "/updateLastAttempt")
-//                .retrieve()
-//                .onStatus(
-//                        HttpStatusCode::isError,
-//                        response -> exceptionMapper.mapError(response, serviceName)
-//                         )
-//                .bodyToMono(BookInstanceDto.class)
-//                .retryWhen(
-//                        Retry.backoff(3, Duration.ofMillis(500))
-//                             .filter(this::isRetryableException)
-//                          )
-//                .block();
-//    }
 
 
     private boolean isRetryableException(Throwable throwable) {

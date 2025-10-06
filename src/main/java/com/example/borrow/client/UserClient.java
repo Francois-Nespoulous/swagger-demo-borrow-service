@@ -1,7 +1,7 @@
 package com.example.borrow.client;
 
+import com.example.borrow.dto.in.UserClientDto;
 import com.example.borrow.exception.WebClientExceptionMapper;
-import com.example.borrow.dto.out.UserDto;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Service;
@@ -30,7 +30,7 @@ public class UserClient {
         this.USER_SERVICE_URL = userServiceUrl;
     }
 
-    public UserDto getLoggedUser() {
+    public UserClientDto getLoggedUser() {
         return webClient
                 .get()
                 .uri(this.USER_SERVICE_URL + "api/v1/logged-user")
@@ -39,7 +39,7 @@ public class UserClient {
                         HttpStatusCode::isError,
                         response -> exceptionMapper.mapError(response, serviceName)
                 )
-                .bodyToMono(UserDto.class)
+                .bodyToMono(UserClientDto.class)
                 .retryWhen(
                         Retry.backoff(3, Duration.ofMillis(500))
                                 .filter(this::isRetryableException)
@@ -52,7 +52,7 @@ public class UserClient {
                 ((WebClientResponseException) throwable).getStatusCode().is5xxServerError();
     }
 
-    public UserDto getUser(UUID userId) {
+    public UserClientDto getUser(UUID userId) {
         return webClient
                 .get()
                 .uri(this.USER_SERVICE_URL + "api/v1/user/" + userId)
@@ -61,7 +61,7 @@ public class UserClient {
                         HttpStatusCode::isError,
                         response -> exceptionMapper.mapError(response, serviceName)
                          )
-                .bodyToMono(UserDto.class)
+                .bodyToMono(UserClientDto.class)
                 .retryWhen(
                         Retry.backoff(3, Duration.ofMillis(500))
                              .filter(this::isRetryableException)
@@ -69,7 +69,7 @@ public class UserClient {
                 .block();
     }
 
-    public UserDto getUserByUsername(String username) {
+    public UserClientDto getUserByUsername(String username) {
         return webClient
                 .get()
                 .uri(this.USER_SERVICE_URL + "api/v1/user/username/" + username)
@@ -78,7 +78,7 @@ public class UserClient {
                         HttpStatusCode::isError,
                         response -> exceptionMapper.mapError(response, serviceName)
                          )
-                .bodyToMono(UserDto.class)
+                .bodyToMono(UserClientDto.class)
                 .retryWhen(
                         Retry.backoff(3, Duration.ofMillis(500))
                              .filter(this::isRetryableException)

@@ -1,53 +1,19 @@
 package com.example.borrow.mapper;
 
-import com.example.borrow.domain.enums.BorrowStatus;
 import com.example.borrow.domain.model.BookDefinition;
 import com.example.borrow.domain.model.BookInstance;
+import com.example.borrow.dto.in.BookInstanceClientDto;
+import com.example.borrow.dto.in.BookInstanceSimpleClientDto;
 import com.example.borrow.dto.out.BookDefinitionDto;
 import com.example.borrow.dto.out.BookInstanceDto;
-import com.example.borrow.persistence.repository.entity.BookDefinitionEntity;
-import com.example.borrow.persistence.repository.entity.BookInstanceEntity;
-import com.example.borrow.repository.BorrowRepository;
 
 public class BookInstanceMapper {
-    public static BookInstance toDomainWithoutDefinition(BookInstanceEntity bookInstanceEntity, BorrowRepository borrowRepository) {
-        boolean isBorrowed = borrowRepository.existsByBookInstanceId_AndStatusEquals(bookInstanceEntity.getId(), BorrowStatus.ONGOING);
-
-        return new BookInstance(
-                bookInstanceEntity.getId(),
-                bookInstanceEntity.getBookState(),
-                null,
-                isBorrowed,
-                bookInstanceEntity.getVersion(), bookInstanceEntity.getLastBorrowAttempt()
-        );
-    }
-
-    public static BookInstance toDomain(BookInstanceEntity bookInstanceEntity, BorrowRepository borrowRepository) {
-        boolean isBorrowed = borrowRepository.existsByBookInstanceId_AndStatusEquals(bookInstanceEntity.getId(), BorrowStatus.ONGOING);
-        BookDefinition bookDefinition = BookDefinitionMapper.toDomainWithoutInstance(bookInstanceEntity.getBookDefinition(), borrowRepository);
-
-        return new BookInstance(
-                bookInstanceEntity.getId(),
-                bookInstanceEntity.getBookState(),
-                bookDefinition,
-                isBorrowed,
-                bookInstanceEntity.getVersion(),
-                bookInstanceEntity.getLastBorrowAttempt()
-        );
-    }
-
-    public static BookInstanceDto toDtoWithoutDefinition(BookInstance bookInstance) {
-        return new BookInstanceDto(
-                bookInstance.getId(),
-                bookInstance.getBookState(),
-                null,
-                bookInstance.isBorrowed()
-        );
-    }
-
     public static BookInstanceDto toDto(BookInstance bookInstance) {
-        BookDefinitionDto bookDefinitionDto = BookDefinitionMapper.toDtoWithoutInstance(bookInstance.getBookDefinition());
+        BookDefinitionDto bookDefinitionDto = BookDefinitionMapper.toDto(bookInstance.getBookDefinition());
+        return BookInstanceMapper.toDto(bookInstance, bookDefinitionDto);
+    }
 
+    static BookInstanceDto toDto(BookInstance bookInstance, BookDefinitionDto bookDefinitionDto) {
         return new BookInstanceDto(
                 bookInstance.getId(),
                 bookInstance.getBookState(),
@@ -56,27 +22,21 @@ public class BookInstanceMapper {
         );
     }
 
-    public static BookInstanceEntity toEntity(BookInstance bookInstance) {
-        BookDefinitionEntity bookDefinitionEntity = BookDefinitionMapper.toEntityOnlyId(bookInstance.getBookDefinition());
-
-        return new BookInstanceEntity(
-                bookInstance.getId(),
-                bookInstance.getBookState(),
-                bookDefinitionEntity,
-                bookInstance.getVersion()
+    public static BookInstance toDomain(BookInstanceClientDto dto, BookDefinition parent, boolean borrowed) {
+        return new BookInstance(
+                dto.id(),
+                dto.bookState(),
+                parent,
+                borrowed
         );
     }
 
-    public static BookInstance toDomain(BookInstanceDto bookInstanceDto) {
-        BookDefinition bookDefinition = BookDefinitionMapper.toDomainWithoutInstance(bookInstanceDto.bookDefinition());
-
+    public static BookInstance toDomain(BookInstanceSimpleClientDto dto, BookDefinition parent, boolean borrowed) {
         return new BookInstance(
-                bookInstanceDto.id(),
-                bookInstanceDto.bookState(),
-                bookDefinition,
-                bookInstanceDto.borrowed(),
-                null,
-                null
+                dto.id(),
+                dto.bookState(),
+                parent,
+                borrowed
         );
     }
 }

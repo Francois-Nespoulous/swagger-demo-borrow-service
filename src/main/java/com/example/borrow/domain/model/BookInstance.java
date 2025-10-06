@@ -1,8 +1,8 @@
 package com.example.borrow.domain.model;
 
 import com.example.borrow.domain.enums.BookState;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
-import java.time.Instant;
 import java.util.UUID;
 
 public class BookInstance {
@@ -10,22 +10,17 @@ public class BookInstance {
 
     private BookState bookState;
 
+    @JsonBackReference
     private BookDefinition bookDefinition;
 
     private boolean borrowed;
 
-    private Long version;
 
-    private Instant lastBorrowAttempt;
-
-
-    public BookInstance(UUID id, BookState bookState, BookDefinition bookDefinitionSummary, boolean borrowed, Long version, Instant lastBorrowAttempt) {
+    public BookInstance(UUID id, BookState bookState, BookDefinition bookDefinitionSummary, boolean borrowed) {
         this.id = id;
         this.bookState = bookState;
         this.bookDefinition = bookDefinitionSummary;
         this.borrowed = borrowed;
-        this.version = version;
-        this.lastBorrowAttempt = lastBorrowAttempt;
     }
 
     public UUID getId() {
@@ -48,11 +43,7 @@ public class BookInstance {
         this.bookDefinition = bookDefinition;
     }
 
-    public void updateLastAttempt() {
-        this.lastBorrowAttempt = Instant.now();
-    }
-
-    public Long getVersion() {
-        return version;
+    public void setBorrowed(boolean borrowed) {
+        this.borrowed = borrowed;
     }
 }

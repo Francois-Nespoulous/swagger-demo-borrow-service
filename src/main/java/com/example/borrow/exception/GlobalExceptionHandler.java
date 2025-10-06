@@ -4,6 +4,7 @@ import com.example.borrow.exception.global.ConflictException;
 import com.example.borrow.exception.global.ForbiddenException;
 import com.example.borrow.exception.global.NotFoundException;
 import com.example.borrow.exception.global.RemoteServiceException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,6 +16,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import java.time.LocalDateTime;
 
 @ControllerAdvice
+@Slf4j
 public class GlobalExceptionHandler {
 
     @Value("${spring.application.name}")
@@ -45,6 +47,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleOtherException(Exception ex) {
+        log.error("Unexpected error in borrow-service", ex);
         return this.handleException(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR);
     }
 
@@ -52,7 +55,7 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ErrorResponse> handleAuthenticationException(AuthenticationException ignoredEx) {
         return this.handleException("You must be logged in to perform this operation", HttpStatus.UNAUTHORIZED);
     }
-//TODO trouver pour differencier error admin de error not loggin
+
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponse> handleAccessDeniedException(AccessDeniedException ignoredEx) {
         return this.handleException("You do not have permission to access this resource", HttpStatus.FORBIDDEN);

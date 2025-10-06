@@ -20,7 +20,7 @@ public class UserDetailsImpl implements UserDetails {
     public UserDetailsImpl(User user) {
         this.id = user.getId();
         this.username = user.getUsername();
-        this.password = user.getPassword();
+        this.password = null;
         this.role = user.getUserRole();
     }
 

@@ -62,21 +62,4 @@ public class BorrowController {
                 .map(BorrowMapper::toDto)
                 .toList();
     }
-
-    @GetMapping("/user/{userId}/countBorrowed") //TODO il faut plus : key/value minimum, un json quoi
-    public int countBooksBorrowedByUser(
-            @PathVariable UUID userId
-    ) {
-        return borrowService.getNumberOfBooksBorrowedByUser(userId);
-    }
-
-    @GetMapping("/book/countBorrowed") //TODO body dans get pas conseillé
-    public int countBooksBorrowedAmongBookInstances(@RequestBody List<UUID> bookInstanceIds) {
-        return borrowService.getNumberOfBooksBorrowedAmongBookInstances(bookInstanceIds);
-    }
-
-    @GetMapping("/book/{bookId}/isBorrowed") //TODO bookId => on sait pas si bookInstanceId ou bookDefinitionId
-    public boolean isBookBorrowed(@PathVariable UUID bookId) {
-        return borrowService.isBookBorrowed(bookId);
-    }
 }

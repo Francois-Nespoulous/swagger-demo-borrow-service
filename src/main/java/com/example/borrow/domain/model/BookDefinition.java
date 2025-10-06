@@ -1,5 +1,7 @@
 package com.example.borrow.domain.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -12,6 +14,7 @@ public class BookDefinition {
     private int nbTotalBooks;
     private int nbBorrowedBooks;
 
+    @JsonManagedReference
     private List<BookInstance> bookInstances;
 
     public BookDefinition(UUID id, String title, String author, List<BookInstance> bookInstances, int nbTotalBooks, int nbBorrowedBooks) {
@@ -54,5 +57,17 @@ public class BookDefinition {
 
     public boolean isBorrowed() {
         return getNbBorrowedBooks() > 0;
+    }
+
+    public void setBookInstances(List<BookInstance> instances) {
+        this.bookInstances = instances;
+    }
+
+    public void setNbTotalBooks(int nbTotalBooks) {
+        this.nbTotalBooks = nbTotalBooks;
+    }
+
+    public void setNbBorrowedBooks(int nbBorrowedBooks) {
+        this.nbBorrowedBooks = nbBorrowedBooks;
     }
 }

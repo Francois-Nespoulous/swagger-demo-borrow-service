@@ -1,7 +1,7 @@
 package com.example.borrow.config;
 
 import com.example.borrow.client.UserClient;
-import com.example.borrow.dto.out.UserDto;
+import com.example.borrow.dto.in.UserClientDto;
 import com.example.borrow.mapper.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -21,8 +21,8 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        UserDto userDto = userClient.getUserByUsername(username);
+        UserClientDto userClientDto = userClient.getUserByUsername(username);
 
-        return new UserDetailsImpl(UserMapper.toDomain(userDto));
+        return new UserDetailsImpl(UserMapper.toDomain(userClientDto, 0));
     }
 }

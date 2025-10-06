@@ -1,12 +1,12 @@
 package com.example.borrow.dto.out;
 
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
 import java.util.List;
 import java.util.UUID;
 
-@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public record BookDefinitionDto(
         UUID id,
         String title,
@@ -14,8 +14,6 @@ public record BookDefinitionDto(
         int nbTotalBooks,
         int nbBorrowedBooks,
 
-        @JsonIgnoreProperties("bookDefinition")
-        List<BookInstanceDto> bookInstances
+        List<BookInstanceDto> bookInstanceDtos
 ) {
 }
-//TODO check customization du mapper Jackson
