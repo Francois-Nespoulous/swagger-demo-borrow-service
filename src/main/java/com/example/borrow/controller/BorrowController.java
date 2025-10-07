@@ -1,9 +1,9 @@
 package com.example.borrow.controller;
 
 import com.example.borrow.domain.model.Borrow;
-import com.example.borrow.dto.out.BorrowDto;
+import com.example.borrow.controller.dto.out.BorrowDto;
 import com.example.borrow.domain.service.BorrowService;
-import com.example.borrow.mapper.BorrowMapper;
+import com.example.borrow.domain.mapper.BorrowMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 

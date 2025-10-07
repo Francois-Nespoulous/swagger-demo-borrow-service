@@ -1,4 +1,4 @@
-package com.example.borrow.dto.out;
+package com.example.borrow.controller.dto.out;
 
 import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;

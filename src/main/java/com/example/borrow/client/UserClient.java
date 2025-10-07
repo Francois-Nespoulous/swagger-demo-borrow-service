@@ -1,6 +1,6 @@
 package com.example.borrow.client;
 
-import com.example.borrow.dto.in.UserClientDto;
+import com.example.borrow.domain.service.ext.UserClientDto;
 import com.example.borrow.exception.WebClientExceptionMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatusCode;

@@ -1,4 +1,4 @@
-package com.example.borrow.dto.out;
+package com.example.borrow.controller.dto.out;
 
 import com.example.borrow.domain.enums.BorrowStatus;
 

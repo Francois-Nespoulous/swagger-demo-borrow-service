@@ -1,9 +1,9 @@
-package com.example.borrow.mapper;
+package com.example.borrow.domain.mapper;
 import com.example.borrow.domain.model.BookDefinition;
 import com.example.borrow.domain.model.BookInstance;
-import com.example.borrow.dto.in.BookDefinitionClientDto;
-import com.example.borrow.dto.out.BookDefinitionDto;
-import com.example.borrow.dto.out.BookInstanceDto;
+import com.example.borrow.domain.service.ext.BookDefinitionClientDto;
+import com.example.borrow.controller.dto.out.BookDefinitionDto;
+import com.example.borrow.controller.dto.out.BookInstanceDto;
 
 import java.util.List;
 

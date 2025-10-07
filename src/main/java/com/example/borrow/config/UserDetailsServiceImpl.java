@@ -1,8 +1,8 @@
 package com.example.borrow.config;
 
 import com.example.borrow.client.UserClient;
-import com.example.borrow.dto.in.UserClientDto;
-import com.example.borrow.mapper.UserMapper;
+import com.example.borrow.domain.service.ext.UserClientDto;
+import com.example.borrow.domain.mapper.UserMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

@@ -19,7 +19,6 @@ public class BorrowEntity {
 
     private UUID bookInstanceId;
 
-    @JoinColumn(name = "username") //TODO remane en userId, mais utilisent la meme db
     private UUID userId;
 
     @Enumerated(EnumType.STRING)
@@ -32,10 +31,10 @@ public class BorrowEntity {
     public BorrowEntity() {
     }
 
-    public BorrowEntity(UUID id, UUID bookInstanceEntity, UUID userEntity, BorrowStatus status, LocalDateTime borrowDate, LocalDateTime returnDate) {
+    public BorrowEntity(UUID id, UUID bookInstanceId, UUID userId, BorrowStatus status, LocalDateTime borrowDate, LocalDateTime returnDate) {
         this.id = id;
-        this.bookInstanceId = bookInstanceEntity;
-        this.userId = userEntity;
+        this.bookInstanceId = bookInstanceId;
+        this.userId = userId;
         this.status = status;
         this.borrowDate = borrowDate;
         this.returnDate = returnDate;

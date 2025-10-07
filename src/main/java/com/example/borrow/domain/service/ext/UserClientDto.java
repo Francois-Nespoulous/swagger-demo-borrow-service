@@ -1,4 +1,4 @@
-package com.example.borrow.dto.in;
+package com.example.borrow.domain.service.ext;
 
 import com.example.borrow.domain.enums.UserRole;
 

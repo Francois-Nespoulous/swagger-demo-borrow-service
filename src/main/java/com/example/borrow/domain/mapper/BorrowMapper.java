@@ -1,9 +1,9 @@
-package com.example.borrow.mapper;
+package com.example.borrow.domain.mapper;
 
 import com.example.borrow.domain.model.BookInstance;
 import com.example.borrow.domain.model.Borrow;
 import com.example.borrow.domain.model.User;
-import com.example.borrow.dto.out.BorrowDto;
+import com.example.borrow.controller.dto.out.BorrowDto;
 import com.example.borrow.persistence.repository.entity.BorrowEntity;
 
 public class BorrowMapper {

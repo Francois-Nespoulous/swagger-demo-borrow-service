@@ -7,19 +7,20 @@ import com.example.borrow.domain.model.BookDefinition;
 import com.example.borrow.domain.model.BookInstance;
 import com.example.borrow.domain.model.Borrow;
 import com.example.borrow.domain.model.User;
-import com.example.borrow.dto.in.BookDefinitionClientDto;
-import com.example.borrow.dto.in.BookInstanceClientDto;
-import com.example.borrow.dto.in.UserClientDto;
+import com.example.borrow.domain.service.ext.BookDefinitionClientDto;
+import com.example.borrow.domain.service.ext.BookInstanceClientDto;
+import com.example.borrow.domain.service.ext.UserClientDto;
 import com.example.borrow.exception.specific.*;
-import com.example.borrow.mapper.BookDefinitionMapper;
-import com.example.borrow.mapper.BookInstanceMapper;
-import com.example.borrow.mapper.BorrowMapper;
-import com.example.borrow.mapper.UserMapper;
+import com.example.borrow.domain.mapper.BookDefinitionMapper;
+import com.example.borrow.domain.mapper.BookInstanceMapper;
+import com.example.borrow.domain.mapper.BorrowMapper;
+import com.example.borrow.domain.mapper.UserMapper;
 import com.example.borrow.persistence.repository.entity.BorrowEntity;
 import com.example.borrow.repository.BorrowRepository;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,18 +30,23 @@ import java.util.Objects;
 import java.util.UUID;
 
 @Service
-@Slf4j //TODO pas lombok ! Logger log = ...
 public class BorrowService {
-    private static final int MAX_BORROWED_BOOKS_PER_USER = 3;
+    private final int MAX_BORROWED_BOOKS_PER_USER;
 
     private final BorrowRepository borrowRepository;
+    private final LockService lockService;
     private final UserClient userClient;
     private final BookClient bookClient;
 
+    private static final Logger log = LoggerFactory.getLogger(BorrowService.class);
+
     @Autowired
-    public BorrowService(BorrowRepository borrowRepository,
+    public BorrowService(@Value("${borrow.book.max-per-user}") Integer maxBorrowedBooksPerUser,
+                         BorrowRepository borrowRepository, LockService lockService,
                          UserClient userClient, BookClient bookClient) {
+        this.MAX_BORROWED_BOOKS_PER_USER = maxBorrowedBooksPerUser;
         this.borrowRepository = borrowRepository;
+        this.lockService = lockService;
         this.userClient = userClient;
         this.bookClient = bookClient;
     }
@@ -65,10 +71,12 @@ public class BorrowService {
 
         this.assertUserCanBorrow(user);
 
-        try {
-//            bookInstance.updateLastAttempt();
-//            bookInstanceRepository.save(BookInstanceMapper.toEntity(bookInstance)); TODO pour optimist lock
+        boolean locked = lockService.tryLock(bookInstanceId, user.getId());
+        if (!locked) {
+            throw new ConcurrentBorrowException(bookInstanceId);
+        }
 
+        try {
             Borrow borrow = new Borrow(null, bookInstance, user, BorrowStatus.ONGOING, LocalDateTime.now(), null);
 
             borrow = BorrowMapper.toDomain(
@@ -78,8 +86,8 @@ public class BorrowService {
             log.info("Book borrowed");
             log.debug("Borrow created: {}", borrow);
             return borrow;
-        } catch (OptimisticLockingFailureException e) {
-            throw new ConcurrentBorrowException(bookInstanceId);
+        } finally {
+            lockService.unlock(bookInstanceId);
         }
     }
 
@@ -103,9 +111,13 @@ public class BorrowService {
         this.assertBookInstanceNotAlreadyReturned(borrow);
         this.assertUserCanReturnBorrow(borrow, user);
 
+        boolean locked = lockService.tryLock(borrow.getBookInstance().getId(), user.getId());
+        if (!locked) {
+            throw new ConcurrentBorrowException(borrow.getBookInstance().getId());
+        }
+
         try {
             borrow.returnBookNow();
-//            bookInstanceRepository.save(BookInstanceMapper.toEntity(borrow.getBookInstance())); TODO pour optimist lock
 
             borrow = BorrowMapper.toDomain(
                     borrowRepository.save(BorrowMapper.toEntity(borrow)),
@@ -114,8 +126,8 @@ public class BorrowService {
             log.info("Book returned");
             log.debug("Borrow updated: {}", borrow);
             return borrow;
-        } catch (OptimisticLockingFailureException e) {
-            throw new ConcurrentReturnException(borrow.getBookInstance().getId());
+        } finally {
+            lockService.unlock(borrow.getBookInstance().getId());
         }
     }
 

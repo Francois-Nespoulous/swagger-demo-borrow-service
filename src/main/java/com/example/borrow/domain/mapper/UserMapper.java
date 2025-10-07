@@ -1,8 +1,8 @@
-package com.example.borrow.mapper;
+package com.example.borrow.domain.mapper;
 
 import com.example.borrow.domain.model.User;
-import com.example.borrow.dto.in.UserClientDto;
-import com.example.borrow.dto.out.UserDto;
+import com.example.borrow.domain.service.ext.UserClientDto;
+import com.example.borrow.controller.dto.out.UserDto;
 
 public class UserMapper {
     public static UserDto toDto(User user) {

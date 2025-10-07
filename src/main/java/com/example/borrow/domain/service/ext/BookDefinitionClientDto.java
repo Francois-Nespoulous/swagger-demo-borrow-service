@@ -1,4 +1,4 @@
-package com.example.borrow.dto.in;
+package com.example.borrow.domain.service.ext;
 
 import java.util.List;
 import java.util.UUID;

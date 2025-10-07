@@ -1,6 +1,6 @@
 package com.example.borrow.e2e;
 
-import com.example.borrow.dto.out.BorrowDto;
+import com.example.borrow.controller.dto.out.BorrowDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;

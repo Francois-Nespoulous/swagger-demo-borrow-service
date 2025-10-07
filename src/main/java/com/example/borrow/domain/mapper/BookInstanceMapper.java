@@ -1,11 +1,11 @@
-package com.example.borrow.mapper;
+package com.example.borrow.domain.mapper;
 
 import com.example.borrow.domain.model.BookDefinition;
 import com.example.borrow.domain.model.BookInstance;
-import com.example.borrow.dto.in.BookInstanceClientDto;
-import com.example.borrow.dto.in.BookInstanceSimpleClientDto;
-import com.example.borrow.dto.out.BookDefinitionDto;
-import com.example.borrow.dto.out.BookInstanceDto;
+import com.example.borrow.domain.service.ext.BookInstanceClientDto;
+import com.example.borrow.domain.service.ext.BookInstanceSimpleClientDto;
+import com.example.borrow.controller.dto.out.BookDefinitionDto;
+import com.example.borrow.controller.dto.out.BookInstanceDto;
 
 public class BookInstanceMapper {
     public static BookInstanceDto toDto(BookInstance bookInstance) {
